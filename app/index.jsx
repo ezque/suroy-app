@@ -1,15 +1,22 @@
-import { Text, View } from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
 
+import Home from "./Auth/index";
 export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>new update on mobile app</Text>
-    </View>
-  );
+
+
+
+
+    return (
+        <View style={styles.container}>
+           <Home />
+        </View>
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "white",
+    },
+});
