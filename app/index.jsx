@@ -5,8 +5,6 @@ import Home from "./Auth/index";
 export default function Index() {
 
 
-
-
     return (
         <View style={styles.container}>
            <Home />
