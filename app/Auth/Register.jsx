@@ -1,13 +1,13 @@
-import React, { useState } from "react";
 import { Picker } from "@react-native-picker/picker";
+import { useState } from "react";
 
 import {
-  View,
+  Image,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Image,
+  View,
 } from "react-native";
 
 export default function Register({ onSwitchForm }) {
@@ -177,4 +177,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-0

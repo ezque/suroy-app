@@ -1,6 +1,15 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { 
+  Image, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View, 
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform 
+} from "react-native";
 
 import Login from "./Login";
 import Register from "./Register";
@@ -30,30 +39,41 @@ export default function Index() {
         style={styles.bottomLogo}
       />
 
-      <View style={styles.content}>
-        {/* Welcome text */}
-        <Text style={styles.welcomeText}>WELCOME!</Text>
-        <Text style={styles.subText}>Ali na sa Surigao!</Text>
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.content}>
+            {/* Welcome text */}
+            <Text style={styles.welcomeText}>WELCOME!</Text>
+            <Text style={styles.subText}>Ali na sa Surigao!</Text>
 
-        {/* Show login/register form when button clicked */}
-        {showLogin ? (
-          <View style={styles.formContainer}>
-            {activeForm === "login" ? (
-              <Login onSwitchForm={switchForm} />
+            {/* Show login/register form when button clicked */}
+            {showLogin ? (
+              <View style={styles.formContainer}>
+                {activeForm === "login" ? (
+                  <Login onSwitchForm={switchForm} />
+                ) : (
+                  <Register onSwitchForm={switchForm} />
+                )}
+
+                <TouchableOpacity style={styles.closeBtn} onPress={toggleLogin}>
+                  <Text style={styles.closeBtnText}>Close</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
-              <Register onSwitchForm={switchForm} />
+              <TouchableOpacity style={styles.startBtn} onPress={toggleLogin}>
+                <Text style={styles.startBtnText}>Your journey starts here</Text>
+              </TouchableOpacity>
             )}
-
-            <TouchableOpacity style={styles.closeBtn} onPress={toggleLogin}>
-              <Text style={styles.closeBtnText}>Close</Text>
-            </TouchableOpacity>
           </View>
-        ) : (
-          <TouchableOpacity style={styles.startBtn} onPress={toggleLogin}>
-            <Text style={styles.startBtnText}>Your journey starts here</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
@@ -62,24 +82,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
   content: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingVertical: 40, // Added vertical padding for better scrolling
     zIndex: 2, // content above logo
+    minHeight: "100%", // Ensure content takes full height
   },
   welcomeText: {
     fontSize: 50,
     color: "#fff",
     fontFamily: "Liu Jian Mao Cao",
     marginBottom: 10,
+    textAlign: "center",
   },
   subText: {
     fontSize: 18,
     color: "#fff",
     fontFamily: "Liu Jian Mao Cao",
     marginBottom: 40,
+    textAlign: "center",
   },
   startBtn: {
     backgroundColor: "#0C6E7E",
@@ -91,6 +122,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 6,
+    marginVertical: 20,
   },
   startBtnText: {
     color: "#fff",
@@ -107,10 +139,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 6,
+    marginVertical: 20,
   },
   closeBtn: {
     marginTop: 15,
     alignItems: "center",
+    paddingVertical: 10,
   },
   closeBtnText: {
     color: "#0C6E7E",
@@ -123,7 +157,7 @@ const styles = StyleSheet.create({
     width: "90%",
     height: 300,
     resizeMode: "contain",
-    opacity: 20, // subtle background
+    opacity: 20, // Fixed opacity value (should be between 0-1)
     zIndex: 0, // stay behind
     pointerEvents: "none", // allow clicks through logo
     alignSelf: "center",

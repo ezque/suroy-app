@@ -71,10 +71,6 @@ export default function Login({ onSwitchForm, onLoginSuccess }) {
                 secureTextEntry
             />
 
-            <TouchableOpacity>
-                <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
                 style={styles.loginButton}
                 onPress={handleLogin}
