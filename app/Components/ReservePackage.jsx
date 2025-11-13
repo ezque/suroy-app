@@ -79,7 +79,7 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
 
 
             const result = await response.json();
-            console.log("Response data:", result);
+
             if (response.ok) {
                 Alert.alert("Success", "Your reservation has been submitted!");
                 onReservationCompleted();
