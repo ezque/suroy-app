@@ -12,7 +12,7 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
-        numberOfPeople: 1,
+        number_of_people: 1,
         full_name: '',
         email: '',
         phone_number: '',
@@ -35,7 +35,7 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
     };
 
     const handleSubmit = async () => {
-        if (!formData.numberOfPeople || !formData.full_name || !formData.email || !formData.phone_number) {
+        if (!formData.number_of_people || !formData.full_name || !formData.email || !formData.phone_number) {
             Alert.alert("Missing Info", "Please fill all required fields.");
             return;
         }
@@ -62,7 +62,8 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
                 },
                 body: JSON.stringify({
                     package_id: selectedPackage.id,
-                    number_of_people: formData.numberOfPeople,
+                    number_of_people: formData.number_of_people,
+                    total_amount: totalAmount,
                     full_name: formData.full_name,
                     email: formData.email,
                     phone_number: formData.phone_number,
@@ -73,10 +74,12 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
                     e_relationship: formData.e_relationship,
                     status: 'pending',
                 }),
+
             });
 
-            const result = await response.json();
 
+            const result = await response.json();
+            console.log("Response data:", result);
             if (response.ok) {
                 Alert.alert("Success", "Your reservation has been submitted!");
                 onReservationCompleted();
@@ -96,7 +99,7 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
 
     const maxSlots = Math.min(selectedPackage.available_slot || 0, 50);
     const availableSlots = Array.from({ length: maxSlots }, (_, i) => i + 1);
-    const totalAmount = selectedPackage.price * formData.numberOfPeople;
+    const totalAmount = selectedPackage.price * formData.number_of_people;
 
     return (
         <Modal
@@ -172,15 +175,15 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
                                     {availableSlots.map((num) => (
                                         <TouchableOpacity
                                             key={num}
-                                            onPress={() => updateFormData('numberOfPeople', num)}
+                                            onPress={() => updateFormData('number_of_people', num)}
                                             style={[
                                                 styles.peopleButton,
-                                                formData.numberOfPeople === num && styles.peopleButtonActive
+                                                formData.number_of_people === num && styles.peopleButtonActive
                                             ]}
                                         >
                                             <Text style={[
                                                 styles.peopleButtonText,
-                                                formData.numberOfPeople === num && styles.peopleButtonTextActive
+                                                formData.number_of_people === num && styles.peopleButtonTextActive
                                             ]}>{num}</Text>
                                         </TouchableOpacity>
                                     ))}
@@ -376,7 +379,7 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
                                     <Text style={styles.detailSectionTitle}>Group Information</Text>
                                     <View style={styles.detailRow}>
                                         <Text style={styles.detailLabel}>Number of People:</Text>
-                                        <Text style={styles.detailValue}>{formData.numberOfPeople} persons</Text>
+                                        <Text style={styles.detailValue}>{formData.number_of_people} persons</Text>
                                     </View>
                                     {formData.special_req ? (
                                         <View style={styles.detailRow}>
@@ -433,6 +436,25 @@ export default function ReservePackage({ visible, onClose, package: selectedPack
                                     <Text style={styles.totalConfirmationLabel}>Total Amount:</Text>
                                     <Text style={styles.totalConfirmationAmount}>₱{totalAmount.toLocaleString()}</Text>
                                 </View>
+                            </View>
+
+                            {/* Terms */}
+                            <View style={styles.termsSection}>
+                                <TouchableOpacity
+                                    onPress={() => updateFormData('agreeToTerms', !formData.agreeToTerms)}
+                                    style={styles.termsCheckbox}
+                                >
+                                    <View style={[
+                                        styles.checkbox,
+                                        formData.agreeToTerms && styles.checkboxChecked
+                                    ]}>
+                                        {formData.agreeToTerms && <Text style={styles.checkmark}>✓</Text>}
+                                    </View>
+                                    <Text style={styles.termsText}>
+                                        I agree to the <Text style={styles.termsLink}>Terms and Conditions</Text> and{' '}
+                                        <Text style={styles.termsLink}>Cancellation Policy</Text> *
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
 
                             <TouchableOpacity
