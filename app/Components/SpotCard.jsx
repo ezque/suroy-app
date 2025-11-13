@@ -10,54 +10,67 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-
+import BASE_URL from "../../apiConfig";
 const { width } = Dimensions.get('window');
+
+const api_remove = BASE_URL.endsWith('/api')
+    ? BASE_URL.slice(0, -4)
+    : BASE_URL;
+
+const api_url = `${api_remove}/storage`;
 
 // Default fallback data
 const defaultSpot = {
   spot_id: 'fallback',
   spot_name: 'Unknown Spot',
   location: 'Location not available',
-  image_url: 'https://via.placeholder.com/300x200?text=No+Image',
   description: 'No description available',
   rating: 0,
   reviewCount: 0,
-  images: [{ spot_image: 'https://via.placeholder.com/300x200?text=No+Image' }],
   reviews_count: 0
 };
 
 const SpotCard = (props) => {
-  const router = useRouter();
-  
-  // Safe destructuring with fallbacks
-  const { spot = defaultSpot } = props || {};
-  
-  // Ensure we always have a valid spot object
-  const safeSpot = spot && typeof spot === 'object' ? spot : defaultSpot;
-  
-  // Safe property access
-  const spotName = safeSpot.spot_name || defaultSpot.spot_name;
-  const location = safeSpot.location || defaultSpot.location;
-  const imageUrl = safeSpot.image_url || defaultSpot.image_url;
-  const rating = safeSpot.rating || 0;
-  const reviewCount = safeSpot.reviewCount || 0;
+    const router = useRouter();
 
-  const handleExplore = () => {
-    if (safeSpot.spot_id !== 'fallback') {
-      // Navigate to Overview screen with spot data
-      router.push({
-        pathname: '/Tabs/Explore', // This points to your existing overview page
-        params: { 
-          spot: JSON.stringify(safeSpot),
-          spotId: safeSpot.spot_id,
-          spotName: spotName,
-          agencies: JSON.stringify([]),
-          reviews: JSON.stringify([]),
-          activePackages: JSON.stringify([])
+    // Safe destructuring with fallbacks
+    const { spot = defaultSpot } = props || {};
+
+    // Ensure we always have a valid spot object
+    const safeSpot = spot && typeof spot === 'object' ? spot : defaultSpot;
+
+    // Safe property access
+    const spotName = safeSpot.spot_name || defaultSpot.spot_name;
+    const location = safeSpot.location || defaultSpot.location;
+    const imageUrl = safeSpot.images?.[0]?.spot_image
+        ? `${api_url}/${safeSpot.images[0].spot_image}`
+        : safeSpot.image_url || defaultSpot.image_url;
+    const rating = safeSpot.rating || 0;
+    const reviewCount = safeSpot.reviewCount || 0;
+    const handleExplore = () => {
+        if (safeSpot.spot_id !== 'fallback') {
+            const imagesUrls = (safeSpot.images || []).map(img => `${api_url}/${img.spot_image}`);
+
+            // Prepare agencies and packages data
+            const agencies = safeSpot.agencies || []; // make sure backend includes this
+            const activePackages = safeSpot.activePackages || []; // or filter packages containing this spot
+
+            router.push({
+                pathname: '/Tabs/Explore',
+                params: {
+                    spot: JSON.stringify(safeSpot),
+                    spotId: safeSpot.spot_id,
+                    spotName: spotName,
+                    agencies: JSON.stringify(agencies),
+                    activePackages: JSON.stringify(activePackages),
+                    reviews: JSON.stringify(safeSpot.reviews || []),
+                    images: JSON.stringify(imagesUrls),
+                    isSaved: safeSpot.is_saved_by_user ? '1' : '0'
+                }
+            });
         }
-      });
-    }
-  };
+    };
+
 
   // Calculate star components
   const fullStars = Math.floor(rating);
@@ -65,78 +78,78 @@ const SpotCard = (props) => {
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
   return (
-    <TouchableOpacity 
-      style={styles.card}
-      onPress={handleExplore}
-    >
-      {/* Image with overlay rating */}
-      <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: imageUrl }}
-          style={styles.cardImage}
-        />
-
-        {/* Gradient overlay for better text readability */}
-        <View style={styles.imageGradientOverlay} />
-      </View>
-
-      <View style={styles.cardContent}>
-        <Text style={styles.spotName} numberOfLines={1}>
-          {spotName}
-        </Text>
-        
-        {/* Detailed rating below title */}
-        <View style={styles.ratingContainer}>
-          <View style={styles.starsContainer}>
-            {/* Full stars */}
-            {Array.from({ length: fullStars }).map((_, index) => (
-              <MaterialIcons
-                key={`full-${index}`}
-                name="star"
-                size={14}
-                color="#ffb400"
-              />
-            ))}
-            
-            {/* Half star */}
-            {hasHalfStar && (
-              <MaterialIcons
-                key="half"
-                name="star-half"
-                size={14}
-                color="#ffb400"
-              />
-            )}
-            
-            {/* Empty stars */}
-            {Array.from({ length: emptyStars }).map((_, index) => (
-              <MaterialIcons
-                key={`empty-${index}`}
-                name="star-border"
-                size={14}
-                color="#ffb400"
-              />
-            ))}
-          </View>
-          <Text style={styles.ratingText}>({reviewCount} reviews)</Text>
-        </View>
-
-        <View style={styles.locationContainer}>
-          <MaterialIcons name="location-on" size={14} color="#666" />
-          <Text style={styles.location} numberOfLines={1}>
-            {location}
-          </Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.exploreButton}
+      <TouchableOpacity
+          style={styles.card}
           onPress={handleExplore}
-        >
-          <Text style={styles.exploreButtonText}>Explore</Text>
-          <MaterialIcons name="arrow-forward" size={14} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      >
+        {/* Image with overlay rating */}
+        <View style={styles.imageContainer}>
+          <Image
+              source={{ uri: imageUrl }}
+              style={styles.cardImage}
+          />
+
+          {/* Gradient overlay for better text readability */}
+          <View style={styles.imageGradientOverlay} />
+        </View>
+
+        <View style={styles.cardContent}>
+          <Text style={styles.spotName} numberOfLines={1}>
+            {spotName}
+          </Text>
+
+          {/* Detailed rating below title */}
+          <View style={styles.ratingContainer}>
+            <View style={styles.starsContainer}>
+              {/* Full stars */}
+              {Array.from({ length: fullStars }).map((_, index) => (
+                  <MaterialIcons
+                      key={`full-${index}`}
+                      name="star"
+                      size={14}
+                      color="#ffb400"
+                  />
+              ))}
+
+              {/* Half star */}
+              {hasHalfStar && (
+                  <MaterialIcons
+                      key="half"
+                      name="star-half"
+                      size={14}
+                      color="#ffb400"
+                  />
+              )}
+
+              {/* Empty stars */}
+              {Array.from({ length: emptyStars }).map((_, index) => (
+                  <MaterialIcons
+                      key={`empty-${index}`}
+                      name="star-border"
+                      size={14}
+                      color="#ffb400"
+                  />
+              ))}
+            </View>
+            <Text style={styles.ratingText}>({reviewCount} reviews)</Text>
+          </View>
+
+          <View style={styles.locationContainer}>
+            <MaterialIcons name="location-on" size={14} color="#666" />
+            <Text style={styles.location} numberOfLines={1}>
+              {location}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={handleExplore}
+          >
+            <Text style={styles.exploreButtonText}>Explore</Text>
+            <MaterialIcons name="arrow-forward" size={14} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
   );
 };
 
