@@ -105,7 +105,7 @@ export default function Explore() {
                             <MaterialIcons
                                 name={isSaved ? "favorite" : "favorite-border"}
                                 size={20}
-                                color={isSaved ? "#fff" : "#333"}
+                                color={isSaved ? "red" : "white"}
                             />
                             <Text style={[styles.favoriteButtonText, isSaved && styles.favoriteButtonTextActive]}>
                                 {isSaved ? 'Favorite' : 'Add to Favorites'}
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     favoriteButtonText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#333',
+        color: 'white',
     },
     favoriteButtonTextActive: {
         color: '#fff',
