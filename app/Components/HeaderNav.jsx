@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
-  Alert,
   StyleSheet,
   Animated,
   Dimensions,
@@ -14,10 +13,10 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-
-// Import your logo with the correct path
+import BASE_URL from "../../apiConfig";
 import logo from "../../assets/images/logo.png";
 
+const api_notification = `${BASE_URL}/notification`;
 const { width } = Dimensions.get('window');
 
 const HeaderNav = ({ userInformation, onSelectPage }) => {
@@ -26,53 +25,6 @@ const HeaderNav = ({ userInformation, onSelectPage }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [accessToken, setAccessToken] = useState('');
 
-  // Mock notifications data - replace with your actual API call
-  const mockNotifications = [
-    {
-      id: 1,
-      message: "Your booking for 'Surigao Island Hopping' has been confirmed!",
-      unread: true,
-      time: "2h ago",
-      category: "Booking"
-    },
-    {
-      id: 2,
-      message: "New destination 'Siargao Cloud 9' has been added to your favorites",
-      unread: true,
-      time: "5h ago",
-      category: "Favorite"
-    },
-    {
-      id: 3,
-      message: "Payment for your trip to 'Enchanted River' was successful",
-      unread: false,
-      time: "1d ago",
-      category: "Payment"
-    },
-    {
-      id: 4,
-      message: "Your review was helpful to 12 travelers",
-      unread: false,
-      time: "2d ago",
-      category: "Review"
-    },
-    {
-      id: 5,
-      message: "Special offer: 20% off on all island tours this weekend",
-      unread: true,
-      time: "3d ago",
-      category: "Promotion"
-    },
-    {
-      id: 6,
-      message: "Reminder: Your tour to 'Tinuy-an Falls' starts in 2 days",
-      unread: true,
-      time: "1d ago",
-      category: "Reminder"
-    },
-  ];
-
-  // Get access token from AsyncStorage
   const getAccessToken = async () => {
     try {
       const token = await AsyncStorage.getItem('access_token');
@@ -87,21 +39,28 @@ const HeaderNav = ({ userInformation, onSelectPage }) => {
   const fetchNotifications = async () => {
     try {
       const token = await getAccessToken();
-      
-      // If you have a real API endpoint, use this:
-      // const response = await axios.get("/notifications", {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   }
-      // });
-      // setNotifications(response.data);
-      
-      // For now, using mock data
-      setNotifications(mockNotifications);
+      if (!token) return;
+
+      const response = await axios.get(api_notification, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data) {
+        // Map backend data to expected frontend format
+        const mappedNotifications = response.data.map((notif) => ({
+          id: notif.id,
+          message: notif.message,
+          unread: notif.status === 'unread', // assuming status column
+          time: new Date(notif.created_at).toLocaleString(),
+          category: notif.type || 'general',
+        }));
+
+        setNotifications(mappedNotifications);
+      }
     } catch (error) {
       console.error("Error fetching notifications:", error);
-      // Fallback to mock data
-      setNotifications(mockNotifications);
     }
   };
 
@@ -121,35 +80,24 @@ const HeaderNav = ({ userInformation, onSelectPage }) => {
     }
   }, [showNotifications]);
 
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-  };
-
-  const closeNotifications = () => {
-    setShowNotifications(false);
-  };
+  const toggleNotifications = () => setShowNotifications(!showNotifications);
+  const closeNotifications = () => setShowNotifications(false);
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
   const markAsRead = (id) => {
     setNotifications(prev =>
-      prev.map(notif =>
-        notif.id === id ? { ...notif, unread: false } : notif
-      )
+        prev.map(n => n.id === id ? { ...n, unread: false } : n)
     );
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notif => ({ ...notif, unread: false }))
-    );
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
   };
 
   const viewAllNotifications = () => {
     console.log("Redirect to full notifications page");
     closeNotifications();
-    // Navigate to notifications page if you have navigation setup
-    // navigation.navigate('Notifications');
   };
 
   const getNotificationIcon = (category) => {
@@ -165,45 +113,6 @@ const HeaderNav = ({ userInformation, onSelectPage }) => {
     return icons[category] || 'notifications';
   };
 
-  const NotificationItem = ({ notification }) => (
-    <View style={[
-      styles.notificationItem,
-      notification.unread && styles.unreadNotification
-    ]}>
-      <View style={[
-        styles.notificationIcon,
-        { backgroundColor: getNotificationColor(notification.category) }
-      ]}>
-        <MaterialIcons 
-          name={getNotificationIcon(notification.category)} 
-          size={20} 
-          color="#fff" 
-        />
-      </View>
-      
-      <View style={styles.notificationContent}>
-        <Text style={styles.notificationMessage}>
-          {notification.message}
-        </Text>
-        <View style={styles.notificationMeta}>
-          <Text style={styles.notificationTime}>{notification.time}</Text>
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{notification.category}</Text>
-          </View>
-        </View>
-      </View>
-      
-      {notification.unread && (
-        <TouchableOpacity 
-          style={styles.markReadBtn}
-          onPress={() => markAsRead(notification.id)}
-        >
-          <MaterialIcons name="check-circle" size={20} color="#28a745" />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
   const getNotificationColor = (category) => {
     const colors = {
       'Booking': '#28a745',
@@ -217,129 +126,112 @@ const HeaderNav = ({ userInformation, onSelectPage }) => {
     return colors[category] || '#00b4db';
   };
 
-  return (
-    <View style={styles.header}>
-      {/* Left Section: Logo */}
-      <View style={styles.leftSection}>
-        <View style={styles.profileSection}>
-          <Image source={logo} style={styles.avatar} />
-          <Text style={styles.userName}>Suroy Surigao</Text>
+  const NotificationItem = ({ notification }) => (
+      <View style={[
+        styles.notificationItem,
+        notification.unread && styles.unreadNotification
+      ]}>
+        <View style={[
+          styles.notificationIcon,
+          { backgroundColor: getNotificationColor(notification.category) }
+        ]}>
+          <MaterialIcons name={getNotificationIcon(notification.category)} size={20} color="#fff" />
         </View>
-      </View>
 
-      {/* Right Section: Notifications */}
-      <View style={styles.rightSection}>
-        <TouchableOpacity 
-          style={styles.notificationButton}
-          onPress={toggleNotifications}
-        >
-          <View style={styles.iconButton}>
-            <MaterialIcons name="notifications-none" size={24} color="#666" />
-            {unreadCount > 0 && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.badgeText}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </Text>
-              </View>
-            )}
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationMessage}>{notification.message}</Text>
+          <View style={styles.notificationMeta}>
+            <Text style={styles.notificationTime}>{notification.time}</Text>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{notification.category}</Text>
+            </View>
           </View>
-        </TouchableOpacity>
+        </View>
 
-        {/* Notifications Modal */}
-        <Modal
-          visible={showNotifications}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={closeNotifications}
-        >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={closeNotifications}
-          >
-            <Animated.View 
-              style={[
-                styles.dropdown,
-                {
-                  opacity: fadeAnim,
-                  transform: [
-                    {
-                      translateY: fadeAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-10, 0],
-                      }),
-                    },
-                    {
-                      scale: fadeAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.95, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              {/* Dropdown Header */}
-              <View style={styles.dropdownHeader}>
-                <Text style={styles.dropdownTitle}>Notifications</Text>
-                <View style={styles.headerActions}>
-                  {unreadCount > 0 && (
-                    <TouchableOpacity 
-                      style={styles.markAllButton}
-                      onPress={markAllAsRead}
-                    >
-                      <MaterialIcons name="done-all" size={16} color="#00b4db" />
-                      <Text style={styles.markAllText}>Mark all read</Text>
-                    </TouchableOpacity>
-                  )}
-                  <View style={styles.unreadBadge}>
-                    <Text style={styles.unreadBadgeText}>{unreadCount} unread</Text>
+        {notification.unread && (
+            <TouchableOpacity style={styles.markReadBtn} onPress={() => markAsRead(notification.id)}>
+              <MaterialIcons name="check-circle" size={20} color="#28a745" />
+            </TouchableOpacity>
+        )}
+      </View>
+  );
+
+  return (
+      <View style={styles.header}>
+        <View style={styles.leftSection}>
+          <View style={styles.profileSection}>
+            <Image source={logo} style={styles.avatar} />
+            <Text style={styles.userName}>Suroy Surigao</Text>
+          </View>
+        </View>
+
+        <View style={styles.rightSection}>
+          <TouchableOpacity style={styles.notificationButton} onPress={toggleNotifications}>
+            <View style={styles.iconButton}>
+              <MaterialIcons name="notifications-none" size={24} color="#666" />
+              {unreadCount > 0 && (
+                  <View style={styles.notificationBadge}>
+                    <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  </View>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          <Modal visible={showNotifications} transparent animationType="fade" onRequestClose={closeNotifications}>
+            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeNotifications}>
+              <Animated.View style={[styles.dropdown, {
+                opacity: fadeAnim,
+                transform: [
+                  { translateY: fadeAnim.interpolate({ inputRange: [0,1], outputRange: [-10,0] }) },
+                  { scale: fadeAnim.interpolate({ inputRange: [0,1], outputRange: [0.95,1] }) },
+                ],
+              }]}>
+                <View style={styles.dropdownHeader}>
+                  <Text style={styles.dropdownTitle}>Notifications</Text>
+                  <View style={styles.headerActions}>
+                    {unreadCount > 0 && (
+                        <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
+                          <MaterialIcons name="done-all" size={16} color="#00b4db" />
+                          <Text style={styles.markAllText}>Mark all read</Text>
+                        </TouchableOpacity>
+                    )}
+                    <View style={styles.unreadBadge}>
+                      <Text style={styles.unreadBadgeText}>{unreadCount} unread</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              {/* Dropdown Content */}
-              <ScrollView 
-                style={styles.dropdownContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {notifications.length === 0 ? (
-                  <View style={styles.emptyState}>
-                    <MaterialIcons name="notifications-off" size={48} color="#999" />
-                    <Text style={styles.emptyTitle}>No notifications yet</Text>
-                    <Text style={styles.emptySubtitle}>
-                      We'll notify you when something arrives
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.notificationList}>
-                    {notifications.map((notification) => (
-                      <NotificationItem 
-                        key={notification.id} 
-                        notification={notification} 
-                      />
-                    ))}
-                  </View>
-                )}
-              </ScrollView>
+                <ScrollView style={styles.dropdownContent} showsVerticalScrollIndicator={false}>
+                  {notifications.length === 0 ? (
+                      <View style={styles.emptyState}>
+                        <MaterialIcons name="notifications-off" size={48} color="#999" />
+                        <Text style={styles.emptyTitle}>No notifications yet</Text>
+                        <Text style={styles.emptySubtitle}>We'll notify you when something arrives</Text>
+                      </View>
+                  ) : (
+                      <View style={styles.notificationList}>
+                        {notifications.map((notification) => (
+                            <NotificationItem key={notification.id} notification={notification} />
+                        ))}
+                      </View>
+                  )}
+                </ScrollView>
 
-              {/* Dropdown Footer */}
-              <View style={styles.dropdownFooter}>
-                <TouchableOpacity 
-                  style={styles.viewAllButton}
-                  onPress={viewAllNotifications}
-                >
-                  <MaterialIcons name="list-alt" size={20} color="#fff" />
-                  <Text style={styles.viewAllText}>View Notification History</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </TouchableOpacity>
-        </Modal>
+                <View style={styles.dropdownFooter}>
+                  <TouchableOpacity style={styles.viewAllButton} onPress={viewAllNotifications}>
+                    <MaterialIcons name="list-alt" size={20} color="#fff" />
+                    <Text style={styles.viewAllText}>View Notification History</Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            </TouchableOpacity>
+          </Modal>
+        </View>
       </View>
-    </View>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   header: {
