@@ -17,8 +17,8 @@ import { router } from "expo-router";
 const api_url = `${BASE_URL}/login`;
 
 export default function Login({ onSwitchForm, onLoginSuccess }) {
-    const [email, setEmail] = useState("user6@gmail.com");
-    const [password, setPassword] = useState("123456");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
