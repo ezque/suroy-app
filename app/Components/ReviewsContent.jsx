@@ -118,7 +118,7 @@ export default function ReviewsContent({ spot }) {
                     return (
                         <View key={review.id} style={styles.reviewCard}>
                             <Text style={styles.userName}>
-                                {review.user?.userInfo?.firstName} {review.user?.userInfo?.lastName}
+                                {review.user?.user_info?.firstName} {review.user?.user_info?.lastName}
                             </Text>
                             <Text style={styles.reviewText}>{review.review}</Text>
                             <Text style={styles.dateText}>{createdAt}</Text>
